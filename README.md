@@ -14,3 +14,9 @@ npm start
 # Requirement
 ES6-compatible Node.js
 
+# Running with Docker
+
+1. ```docker build -t rutorrent-auto-delete .```
+2. Copy ```config.example.js``` to ```/path/to/config.js``` and edit ```/path/to/config.js```
+3. ```docker run --name rutorrent-auto-delete -v /path/to/config:/usr/src/app/config rutorrent-auto-delete```
+
