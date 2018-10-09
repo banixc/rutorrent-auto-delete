@@ -1,4 +1,4 @@
-let config = require('./config');
+let config = require('./config/config');
 let request = require('request').defaults({ 'proxy': config.proxy || null });
 let fs = require('fs');
 let Queue = require('promise-queue');
