@@ -36,6 +36,7 @@ function doOperation() {
                 console.log("Current ratio is " + ratio.toFixed(2) + " (" + ((result.total - result.free) / 1024 / 1024 / 1024).toFixed(1) + " GB" + " / " + (result.total / 1024 / 1024 / 1024).toFixed(1) + " GB" + ") need to free up " + (neededBytes / 1024 / 1024 / 1024).toFixed(1) + " GB");
             } else {
                 console.log("Current ratio is " + ratio.toFixed(2) + " (" + ((result.total - result.free) / 1024 / 1024 / 1024).toFixed(1) + " GB" + " / " + (result.total / 1024 / 1024 / 1024).toFixed(1) + " GB" + "), you can still add " + ((result.total * config.ratio - (result.total - result.free)) / 1024 / 1024 / 1024).toFixed(1) + " GB of data");
+                return;
             }
             request.post(urlJoin(config.url, 'plugins/httprpc/action.php'),
                 { form: 'mode=list&cmd=d.custom%3Dseedingtime&cmd=d.custom%3Daddtime' },
