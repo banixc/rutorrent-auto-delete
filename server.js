@@ -36,7 +36,7 @@ function doOperation() {
                 console.log("Current ratio is " + ratio.toFixed(2) + " (" + ((result.total - result.free) / 1024 / 1024 / 1024).toFixed(1) + " GB" + " / " + (result.total / 1024 / 1024 / 1024).toFixed(1) + " GB" + ") need to free up " + (neededBytes / 1024 / 1024 / 1024).toFixed(1) + " GB");
             } else {
                 console.log("Current ratio is " + ratio.toFixed(2) + " (" + ((result.total - result.free) / 1024 / 1024 / 1024).toFixed(1) + " GB" + " / " + (result.total / 1024 / 1024 / 1024).toFixed(1) + " GB" + "), you can still add " + ((result.total * config.ratio - (result.total - result.free)) / 1024 / 1024 / 1024).toFixed(1) + " GB of data");
-                return;
+                //return;
             }
             request.post(urlJoin(config.url, 'plugins/httprpc/action.php'),
                 { form: 'mode=list&cmd=d.custom%3Dseedingtime&cmd=d.custom%3Daddtime' },
@@ -90,69 +90,18 @@ function doOperation() {
                         console.error(e);
                         return;
                     }
-
-                    // Determine which torrents to delete
-                    // ==================================================
-                    // delete guilty torrents first (those exceeding maxSeedTime/maxShareRatio)
+                    
+                    let maxRemoveKey = null;
+                    let maxSeedtime = -1;
                     for (let key in parsedData) {
                         if (!parsedData.hasOwnProperty(key)) continue;
-                        totalSize += +parsedData[key].size;
-                        totalDoneSize += +parsedData[key].done_size;
-
-                        // exempt torrents with keepTag
                         if (config.keepTag && parsedData[key].tag === config.keepTag) continue;
-
-                        // downloading torrents
-                        if (+parsedData[key].down_rate) {
-                            if (config.maxShareRatio) {
-                                if (parsedData[key].up_total >= parsedData[key].size * config.maxShareRatio) {
-                                    deleteTorrent(key);
-                                } else {
-                                    continue;
-                                }
-                            } else {
-                                continue;
-                            }
+                        if (maxSeedtime < parsedData[key].seedTime) {
+                            maxSeedtime = parsedData[key].seedTime;
+                            maxRemoveKey = key;
                         }
-
-                        // non-downloading torrents
-                        // delete torrents with very high share ratio first, according to config file
-                        if (config.maxShareRatio && +parsedData[key].ratio > config.maxShareRatio * 1000) {
-                            deleteTorrent(key);
-                            continue;
-                        }
-
-
-                        if (config.maxSeedTime && parsedData[key].seedTime > config.maxSeedTime) {
-                            deleteTorrent(key);
-                            continue;
-                        }
-
-                        innocentTorrents.push(parsedData[key]);
                     }
-
-                    // sort innocent torrents by up_rate, then age
-                    innocentTorrents.sort((a, b) => {
-                        if (a.up_rate !== b.up_rate) {
-                            return a.up_rate - b.up_rate;
-                        } else {
-                            return b.age - a.age;
-                        }
-                    });
-
-                    console.log("Total size of torrents " + (totalDoneSize / 1024 / 1024 / 1024).toFixed(1) + " GB" + " / " + (totalSize / 1024 / 1024 / 1024).toFixed(1) + " GB");
-
-                    // delete innocent torrents until there is enough space
-                    let i = 0;
-                    while (fulfilledBytes < neededBytes) {
-                        if (i >= innocentTorrents.length) {
-                            console.log("\n!!! Error: cannot free up more than " + (fulfilledBytes / 1024 / 1024 / 1024).toFixed(1) + " GB !!!\n");
-                            break;
-                        }
-                        deleteTorrent(innocentTorrents[i].hash);
-                        i++;
-                    }
-                    if (!toDelete.length) return;
+                    deleteTorrent(maxRemoveKey);
 
                     // carry out the deletion
                     console.log("Deleting " + toDelete.length + " files (to free up " + (fulfilledBytes / 1024 / 1024 / 1024).toFixed(1) + " GB)");
@@ -160,6 +109,7 @@ function doOperation() {
                         queue.add(() => {
                             return new Promise((queue_res) => {
                                 console.log("- Deleting " + item.name + " (" + (item.size / 1024 / 1024 / 1024).toFixed(1) + " GB)");
+                                return;
                                 request.post(
                                     {
                                         url: urlJoin(config.url, 'plugins/httprpc/action.php'),
